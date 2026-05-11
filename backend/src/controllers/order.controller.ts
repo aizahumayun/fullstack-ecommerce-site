@@ -38,22 +38,22 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   // 2. get cart
   const cart = await Cart.findOne({ customer });
 
-  if (!cart || cart.items.length === 0) {
-    throw new ApiError(404, "Cart is empty");
+  if (!cart || !Array.isArray(cart.items)) {
+    throw new ApiError(400, "Cart is invalid or empty");
   }
-
   // 3. build order items with price snapshot
   const orderItems = [];
 
   let totalPrice = 0;
 
-  for (const item of cart.items) {
+  for (const item of cart.items || []) {
+    if (!item?.productId || !item?.quantity) continue;
+
     const product = await Product.findById(item.productId);
 
     if (!product) continue;
 
     const itemTotal = product.price * item.quantity;
-
     totalPrice += itemTotal;
 
     orderItems.push({
@@ -63,7 +63,8 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       price: product.price, // snapshot
     });
   }
-
+  console.log("CART:", cart);
+  console.log("ITEMS:", cart?.items);
   // 4. create order
   const orderData: any = {
     customerName,
@@ -83,20 +84,27 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   const order = await Order.create(orderData);
 
   // 5. clear cart after order
-  cart.items.splice(0, cart.items.length);
-  cart.totalPrice = 0;
-  await cart.save();
+  await Cart.updateOne(
+    { customer },
+    {
+      // $set: { items: [], totalPrice: 0 },
+      $set: {
+        items: [],
+        totalPrice: 0,
+      },
+    },
+  );
 
   // 6. send notifications (WhatsApp and Email) asynchronously without blocking response
   setImmediate(() => {
     try {
       sendWhatsApp(
         phoneNumber,
-        `Order ${order._id} placed successfully! Total: ${totalPrice}`
+        `Order ${order._id} placed successfully! Total: ${totalPrice}`,
       ).catch((err) => console.log("WhatsApp failed:", err));
 
       sendOrderEmail(email, order._id.toString()).catch((err) =>
-        console.log("Email failed:", err)
+        console.log("Email failed:", err),
       );
     } catch (err) {
       console.log("Notification error:", err);
@@ -119,9 +127,9 @@ export const getOrders = asyncHandler(async (req: Request, res: Response) => {
 
   const orders = await Order.find({ email });
 
-  return res.status(200).json(
-    new ApiResponse(200, orders, "Orders fetched successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, orders, "Orders fetched successfully"));
 });
 
 //UPDATE ORDER STATUS (ADMIN)
@@ -147,5 +155,17 @@ export const updateOrderStatus = asyncHandler(
     return res
       .status(200)
       .json(new ApiResponse(200, order, "Order updated successfully"));
+  },
+);
+//GET ALL ORDERS (ADMIN)
+export const getAllOrders = asyncHandler(
+  async (req: Request, res: Response) => {
+    const orders = await Order.find().populate("orderItems.productId").sort({
+      createdAt: -1,
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, orders, "Orders fetched successfully"));
   },
 );

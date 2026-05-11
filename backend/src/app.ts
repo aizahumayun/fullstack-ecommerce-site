@@ -27,10 +27,10 @@ import productRoutes from "./routes/product.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 // BASE ROUTES
-app.use("/api/v1/products", productRoutes);
-app.use("/api/v1/categories", categoryRoutes);
-app.use("/api/v1/cart", cartRoutes);
-app.use("/api/v1/orders", orderRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
 //optional server test route
 app.get("/", (req, res) => {
     res.status(200).json({
