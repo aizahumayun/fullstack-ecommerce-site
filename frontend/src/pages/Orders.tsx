@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { getOrdersApi } from "../services/order.services";
+import { GUEST_CUSTOMER_ID } from "../utils/constants";
 
 import type { Order } from "../types/order.types";
 
@@ -9,7 +10,7 @@ const Orders = () => {
   useEffect(() => {
     const fetchOrders = async () => {
     try {
-      const response = await getOrdersApi("guest_user");
+      const response = await getOrdersApi(GUEST_CUSTOMER_ID);
 
       setOrders(response.data);
     } catch (error) {

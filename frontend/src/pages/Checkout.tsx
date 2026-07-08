@@ -2,6 +2,7 @@ import type { SyntheticEvent, ChangeEvent } from "react";
 import { useState } from "react";
 import { createOrderApi } from "../services/order.services";
 import { toast } from "react-hot-toast";
+import { GUEST_CUSTOMER_ID } from "../utils/constants";
 
 const CheckOut = () => {
   const [formData, setFormData] = useState({
@@ -39,7 +40,7 @@ const CheckOut = () => {
           country: formData.country,
         },
         paymentMethod: formData.paymentMethod,
-        customer: formData.email, // using email as customer identifier for simplicity
+        customer: GUEST_CUSTOMER_ID,
       };
       await createOrderApi(payload);
       toast.success("Order placed successfully!");
@@ -115,10 +116,10 @@ const CheckOut = () => {
           className="w-full rounded-md border px-4 py-2"
           required
         >
-          <option value="" disabled>
+            <option value="" disabled>
             Select Payment Method
           </option>
-          <option value="cod">Cash on Delivery</option>
+          <option value="Cash on Delivery">Cash on Delivery</option>
           <option value="Card">Credit/Debit Card</option>
         </select>
         <button
